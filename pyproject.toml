@@ -1,0 +1,12 @@
+[project]
+name = "simple-financial-instruments"
+version = "0.0.1"
+description = "Project includes several foundational financial instruments !"
+readme = "README.md"
+requires-python = ">=3.13.4"
+dependencies = [
+    "beautifulsoup4>=4.13.4",
+    "lxml>=6.0.0",
+    "pyyaml>=6.0.2",
+    "requests>=2.32.4",
+]
