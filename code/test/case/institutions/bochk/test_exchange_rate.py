@@ -23,12 +23,12 @@ class TestBocHkExchangeRateHandler(unittest.TestCase):
     def setUp(self):
         self.exchange_rate_handler = BocHkExchangeRateHandler()
 
-    def test_get_request(self):
+    def test_exchange_rate_transfer(self):
         exchange_rate = self.exchange_rate_handler.fetch_exchange_rate()
         self.assertIsNotNone(exchange_rate)
         print(exchange_rate)
 
-        cal_num = 100
+        cal_num = 41.64
 
         print(f"CNY->USD: {exchange_rate.exchange_rate_transfer(MoneyCode.CNY, MoneyCode.USD, cal_num)}")
         print(f"CNY->HKD: {exchange_rate.exchange_rate_transfer(MoneyCode.CNY, MoneyCode.HKD, cal_num)}")

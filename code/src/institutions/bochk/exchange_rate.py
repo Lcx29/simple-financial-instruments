@@ -42,7 +42,7 @@ class BocHkExchangeRate:
             raise ValueError(f"Exchange rate not found for {from_code.value} to {to_code.value}")
         if current_exchange_rate <= 0:
             raise ValueError(f"Invalid exchange rate: {current_exchange_rate} for {from_code.value} to {to_code.value}")
-        return round(amount * current_exchange_rate, 2)
+        return round(Decimal(str(amount)) * current_exchange_rate, 2)
 
     def add_new_rate(self, from_code: MoneyCode, to_code: MoneyCode, rate: str) -> None:
         dict_key = self.dict_key(from_code, to_code)
