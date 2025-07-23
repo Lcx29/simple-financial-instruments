@@ -10,12 +10,12 @@
 
 @Time    :  2025-07-22 14:44:15
 
-@Desc    :  institutions.bochk.exchange_rate 测试类
+@Desc    :  institutions.boc_hk.exchange_rate 测试类
 """
 
 import unittest
 
-from institutions.bochk.exchange_rate import BocHkExchangeRateHandler, MoneyCode
+from institutions.boc_hk.exchange_rate import BocHkExchangeRateHandler, MoneyCode
 
 
 class TestBocHkExchangeRateHandler(unittest.TestCase):
@@ -28,7 +28,7 @@ class TestBocHkExchangeRateHandler(unittest.TestCase):
         self.assertIsNotNone(exchange_rate)
         print(exchange_rate)
 
-        cal_num = 41.64
+        cal_num = 108.03
 
         print(f"CNY->USD: {exchange_rate.exchange_rate_transfer(MoneyCode.CNY, MoneyCode.USD, cal_num)}")
         print(f"CNY->HKD: {exchange_rate.exchange_rate_transfer(MoneyCode.CNY, MoneyCode.HKD, cal_num)}")
