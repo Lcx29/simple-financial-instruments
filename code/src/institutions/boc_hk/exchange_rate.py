@@ -18,6 +18,7 @@ from typing import List
 
 import bs4
 from bs4.element import Tag
+from loguru import logger
 
 from institutions.money_code import MoneyCode
 from utils.http_client import HttpClient, HttpResponse
@@ -31,10 +32,15 @@ class BocHkExchangeRate:
     def exchange_rate_transfer(self, from_code: MoneyCode, to_code: MoneyCode, amount: float) -> Decimal:
         dict_key = self.dict_key(from_code, to_code)
         current_exchange_rate = self._exchange_rate_dict[dict_key]
+
         if current_exchange_rate is None:
+            logger.error(f"Exchange rate not found for {from_code.value} to {to_code.value}")
             raise ValueError(f"Exchange rate not found for {from_code.value} to {to_code.value}")
+
         if current_exchange_rate <= 0:
+            logger.error(f"Exchange rate from {from_code.value} to {to_code.value} is less than 0")
             raise ValueError(f"Invalid exchange rate: {current_exchange_rate} for {from_code.value} to {to_code.value}")
+
         return round(Decimal(str(amount)) * current_exchange_rate, 2)
 
     def add_new_rate(self, from_code: MoneyCode, to_code: MoneyCode, rate: str) -> None:

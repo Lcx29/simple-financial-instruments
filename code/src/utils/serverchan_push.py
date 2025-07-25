@@ -13,6 +13,7 @@
 @Desc    :  基与 ServerChan 的推送工具 (https://sct.ftqq.com/)
 """
 from typing import Any
+from loguru import logger
 from serverchan_sdk import sc_send
 
 
@@ -54,6 +55,7 @@ class ServerChanPush:
                 desp=send_param.content,
                 options={} if send_param.options is None else send_param.options
             )
+            logger.info(f"server chan response is {response}")
             if response.get("code") != 0:
                 raise ValueError(f"ServerChan push failed: {response.get('message', 'Unknown error')}")
             print(f"ServerChan push success: {response.get('message', 'No message')}")
