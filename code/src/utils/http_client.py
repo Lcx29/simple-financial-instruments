@@ -42,20 +42,22 @@ class HttpResponse:
     def status_code(self) -> int:
         return self._status_code
 
+    def __str__(self):
+        return f"HttpResponse(status_code={self._status_code}, data={self._data})"
+
 
 class HttpClient:
 
-    def get(self, url: str, params: Dict[str, Any] = None, **kwargs: Dict[str, Any]) -> HttpResponse:
+    def get(self, url: str, params: Dict[str, Any] = None, **kwargs) -> HttpResponse:
         return self._request("get", url, params=params, **kwargs)
 
-    def post(self, url: str, data: Dict[str, Any] = None, body: Dict[str, Any] = None,
-             **kwargs: Dict[str, Any]) -> HttpResponse:
+    def post(self, url: str, data: Dict[str, Any] = None, body: Dict[str, Any] = None, **kwargs) -> HttpResponse:
         return self._request("post", url, data=data, json=body, **kwargs)
 
     @staticmethod
-    def _request(method, url, **kwargs) -> HttpResponse:
+    def _request(method: str, url: str, **kwargs) -> HttpResponse:
         try:
-            response = requests.request(method, url, **kwargs)
+            response = requests.request(method=method, url=url, **kwargs)
             response.raise_for_status()
             return HttpResponse(HttpResponseCode.SUCCESS.value, response.content.decode("utf-8"))
         except ConnectionError as e:
