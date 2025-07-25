@@ -2,32 +2,25 @@
 # -*- encoding: utf-8 -*-
 
 """
-@Author  :   lcn29
+@Author  :  lcn29
 
-@Software:   PyCharm
+@Software:  PyCharm
 
-@File    :   exchange_rate.py
+@File    :  exchange_rate.py
 
-@Time    :   2025-07-20 17:01:17
+@Time    :  2025-07-20 17:01:17
 
-@Desc    : BOC HK 汇率计算工具
+@Desc    :  基与 BOC HK 汇率计算工具
 """
 
 from decimal import Decimal
-from enum import Enum
 from typing import List
 
 import bs4
 from bs4.element import Tag
 
+from institutions.money_code import MoneyCode
 from utils.http_client import HttpClient, HttpResponse
-
-
-class MoneyCode(Enum):
-    """货币代码"""
-    USD = "USD"  # 美元
-    HKD = "HKD"  # 港币
-    CNY = "CNY"  # 人民币
 
 
 class BocHkExchangeRate:
@@ -35,7 +28,7 @@ class BocHkExchangeRate:
     def __init__(self, exchange_rate_dict: dict[str, Decimal]):
         self._exchange_rate_dict = exchange_rate_dict
 
-    def exchange_rate_transfer(self, from_code: MoneyCode, to_code: MoneyCode, amount: float) -> float:
+    def exchange_rate_transfer(self, from_code: MoneyCode, to_code: MoneyCode, amount: float) -> Decimal:
         dict_key = self.dict_key(from_code, to_code)
         current_exchange_rate = self._exchange_rate_dict[dict_key]
         if current_exchange_rate is None:
@@ -58,7 +51,7 @@ class BocHkExchangeRate:
         return f"{from_code.value}->{to_code.value}"
 
     def __str__(self):
-        return f"In BocHkExchangeRate, current exchange rate: {self._exchange_rate_dict})"
+        return f"BocHkExchangeRate ==> current exchange rate: {self._exchange_rate_dict})"
 
 
 class BocHkExchangeRateHandler:

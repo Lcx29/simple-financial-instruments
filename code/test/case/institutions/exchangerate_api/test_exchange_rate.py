@@ -6,23 +6,22 @@
 
 @Software:  PyCharm
 
-@File    :  test_http_client.py
+@File    :  test_exchange_rate.py
 
-@Time    :  2025-07-22 14:44:15
+@Time    :  2025-07-25 09:45:15
 
-@Desc    :  institutions.boc_hk.exchange_rate 测试类
+@Desc    :  基与 ExchangeRate-API 的汇率计算工具测试类
 """
-
 import unittest
 
-from institutions.boc_hk.exchange_rate import BocHkExchangeRateHandler
+from institutions.exchangerate_api.exchange_rate import ExchangeRateApiExchangeRateHandler
 from institutions.money_code import MoneyCode
 
 
-class TestBocHkExchangeRateHandler(unittest.TestCase):
+class TestExchangeRateApiExchangeRateHandler(unittest.TestCase):
 
     def setUp(self):
-        self.exchange_rate_handler = BocHkExchangeRateHandler()
+        self.exchange_rate_handler = ExchangeRateApiExchangeRateHandler()
 
     def test_exchange_rate_transfer(self):
         exchange_rate = self.exchange_rate_handler.fetch_exchange_rate()
