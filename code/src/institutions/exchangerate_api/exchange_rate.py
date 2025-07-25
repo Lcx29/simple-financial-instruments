@@ -28,10 +28,13 @@ class ExchangeRateApiExchangeRate:
     def exchange_rate_transfer(self, from_code: MoneyCode, to_code: MoneyCode, amount: float) -> Decimal:
         dict_key = self.dict_key(from_code, to_code)
         current_exchange_rate = self._exchange_rate_dict[dict_key]
+
         if current_exchange_rate is None:
             raise ValueError(f"Exchange rate not found for {from_code.value} to {to_code.value}")
+
         if current_exchange_rate <= 0:
             raise ValueError(f"Invalid exchange rate: {current_exchange_rate} for {from_code.value} to {to_code.value}")
+
         return round(Decimal(str(amount)) * current_exchange_rate, 2)
 
     def add_new_rate(self, from_code: MoneyCode, to_code: MoneyCode, rate: str) -> None:
