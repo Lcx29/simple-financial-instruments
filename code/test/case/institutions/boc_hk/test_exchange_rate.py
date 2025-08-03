@@ -15,9 +15,6 @@
 
 import unittest
 
-import certifi
-import urllib3
-
 from institutions.boc_hk.exchange_rate import BocHkExchangeRateHandler
 from institutions.money_code import MoneyCode
 
@@ -32,7 +29,7 @@ class TestBocHkExchangeRateHandler(unittest.TestCase):
         self.assertIsNotNone(exchange_rate)
         print(exchange_rate)
 
-        cal_num = 0.28
+        cal_num = 35*5
 
         print(f"CNY->USD: {exchange_rate.exchange_rate_transfer(MoneyCode.CNY, MoneyCode.USD, cal_num)}")
         print(f"CNY->HKD: {exchange_rate.exchange_rate_transfer(MoneyCode.CNY, MoneyCode.HKD, cal_num)}")
