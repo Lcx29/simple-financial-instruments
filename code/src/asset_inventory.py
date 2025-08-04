@@ -18,10 +18,11 @@ from typing import List, Any
 from loguru import logger
 
 from institutions.asset_type import AssetType
+from institutions.boc_hk.exchange_rate import BocHkExchangeRateHandler, BocHkExchangeRate
 from institutions.money_code import MoneyCode
 from utils.file_parse import parse_yaml_file
 
-def convert_to_rmb_if_needed(account_balance: Decimal, money_code: str) -> Decimal:
+def convert_to_rmb_if_needed(account_balance: Decimal, money_code: str, boc_hk_exchange_rate: BocHkExchangeRate) -> Decimal:
     """如果货币代码不是人民币，则将金额转为人民币
 
     Args:
@@ -33,11 +34,9 @@ def convert_to_rmb_if_needed(account_balance: Decimal, money_code: str) -> Decim
     money_code_enum = MoneyCode.covert_from_str(money_code)
     if MoneyCode.CNY == money_code_enum:
         return account_balance
+    return boc_hk_exchange_rate.exchange_rate_transfer(money_code_enum, MoneyCode.CNY, float(account_balance))
 
-    # 假设 exchange_rate 是目标货币对人民币的汇率
-    return account_balance
-
-def asset_profit_loss_situation(assert_type: AssetType, assert_config_list: List[dict[str, Any]]) -> List[dict[str, Any]]:
+def asset_profit_loss_situation(assert_type: AssetType, boc_hk_exchange_rate: BocHkExchangeRate, assert_config_list: List[dict[str, Any]]) -> List[dict[str, Any]]:
 
     """获取资产盈亏情况
     Args:
@@ -57,7 +56,7 @@ def asset_profit_loss_situation(assert_type: AssetType, assert_config_list: List
 
     for asset_config in assert_config_list:
         this_month_profit_loss_situation = Decimal(asset_config["current_account_balance"]) - Decimal(asset_config["last_month_account_balance"])
-        this_month_profit_loss_situation_in_rmb = convert_to_rmb_if_needed(this_month_profit_loss_situation, asset_config["money_code"])
+        this_month_profit_loss_situation_in_rmb = convert_to_rmb_if_needed(this_month_profit_loss_situation, asset_config["money_code"], boc_hk_exchange_rate)
 
         this_month_asset_profit_loss_situation_list.append({
             "name": asset_config["name"],
@@ -112,6 +111,9 @@ if __name__ == '__main__':
     if assert_inventory_config is None:
         raise ValueError(f"资产清单配置文件解析失败: {ASSERT_INVENTORY_CONFIG_FILE_PATH}")
 
+    boc_hk_exchange_rate_handler = BocHkExchangeRateHandler()
+    boc_hk_exchange_rate = boc_hk_exchange_rate_handler.fetch_exchange_rate()
+
     next_month_asset_config_list= []
 
     for asset_type_en_str in assert_inventory_config:
@@ -120,7 +122,7 @@ if __name__ == '__main__':
             logger.error("资产类型 {} 不存在", asset_type_en_str)
             continue
         logger.info("开始计算资产类型: {}", asset_type.cn_name)
-        asset_profit_loss_situation_list = asset_profit_loss_situation(asset_type, assert_inventory_config[asset_type_en_str])
+        asset_profit_loss_situation_list = asset_profit_loss_situation(asset_type, boc_hk_exchange_rate, assert_inventory_config[asset_type_en_str])
         calculate_total_asset_balance(asset_type, asset_profit_loss_situation_list)
         next_month_asset_config_list.append(rebuild_next_month_asset_config(asset_type, assert_inventory_config[asset_type_en_str]))
         logger.info("\n\n")

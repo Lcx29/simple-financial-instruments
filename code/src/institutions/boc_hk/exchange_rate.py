@@ -62,6 +62,9 @@ class BocHkExchangeRate:
 
 class BocHkExchangeRateHandler:
 
+    def __init__(self):
+        self.http_client = HttpClient()
+
     def fetch_exchange_rate(self) -> BocHkExchangeRate:
 
         hkd_base_rate_dict = self.__request_hkd_base_rate()
@@ -72,6 +75,56 @@ class BocHkExchangeRateHandler:
         return bock_exchange_rate
 
     def __request_hkd_base_rate(self) -> dict[str, Decimal]:
+        # 请求 BOC HK 和 HKD 相关的汇率数据 - 实时
+        hkd_to_cny_real_time_rate = Decimal(self.__request_hkd_base_real_time_rate(MoneyCode.HKD, MoneyCode.CNY))
+        cny_to_hkd_real_time_rate = Decimal(self.__request_hkd_base_real_time_rate(MoneyCode.CNY, MoneyCode.HKD))
+
+        hkd_to_usd_real_time_rate = Decimal(self.__request_hkd_base_real_time_rate(MoneyCode.HKD, MoneyCode.USD))
+        usd_to_hkd_real_time_rate = Decimal(self.__request_hkd_base_real_time_rate(MoneyCode.USD, MoneyCode.HKD))
+
+        return {
+            BocHkExchangeRate.dict_key(MoneyCode.HKD, MoneyCode.CNY): hkd_to_cny_real_time_rate,
+            BocHkExchangeRate.dict_key(MoneyCode.CNY, MoneyCode.HKD): cny_to_hkd_real_time_rate,
+            BocHkExchangeRate.dict_key(MoneyCode.HKD, MoneyCode.USD): hkd_to_usd_real_time_rate,
+            BocHkExchangeRate.dict_key(MoneyCode.USD, MoneyCode.HKD): usd_to_hkd_real_time_rate
+        }
+
+    def __request_usd_base_rate(self) -> dict[str, Decimal]:
+
+        # 请求 BOC HK 和 USD 相关的汇率数据 - 有延迟
+        http_response = self.http_client.get(
+            "https://www.bochk.com/whk/rates/exchangeRatesUSD/exchangeRatesUSD-input.action?lang=en")
+
+        rate_tr_list = self.__parse_response(http_response)
+        usd_cny_rate = self.__search_rate(rate_tr_list, 'USD/CNH')
+
+        # 因为表格中都是以美元为角度, 卖出美元，买入人民币(卖出 1 美元可以买入多少人民币), 和卖出人民币, 买入美元(卖出 多少人民币可以买入 1 美元)
+        # 所以人民币兑美元, 需要将卖出人民币做转换
+        cny_to_usd_rate = Decimal("1") / Decimal(usd_cny_rate['buy'])
+
+        return {
+            BocHkExchangeRate.dict_key(MoneyCode.CNY, MoneyCode.USD): cny_to_usd_rate,
+            BocHkExchangeRate.dict_key(MoneyCode.USD, MoneyCode.CNY): Decimal(usd_cny_rate['sell'])
+        }
+
+    def __request_hkd_base_real_time_rate(self, from_code: MoneyCode, to_code: MoneyCode) -> str:
+        form_data = {
+            "bean.rateType": 1,
+            "bean.depCurrency": "RMB" if from_code == MoneyCode.CNY else from_code.value,
+            "bean.withdrCurrency": "RMB" if to_code == MoneyCode.CNY else to_code.value
+        }
+
+        http_response = self.http_client.post(
+            "https://www.bochk.com/whk/calculator/realTimeRate/realTimeRate-getRealTimeRate.action", data=form_data,
+            body=None)
+
+        if not http_response.is_success():
+            print(
+                f"Failed to fetch exchange rate data, status code: {http_response.status_code}, response: {http_response.data}")
+            raise Exception("Failed to fetch exchange rate data")
+        return str(http_response.data).replace("\"", "")
+
+    def __request_hkd_base_delay_time_rate(self) -> dict[str, Decimal]:
         http_client = HttpClient()
         http_response = http_client.get(
             "https://www.bochk.com/whk/rates/exchangeRatesForCurrency/exchangeRatesForCurrency-input.action?lang=en")
@@ -92,23 +145,6 @@ class BocHkExchangeRateHandler:
             BocHkExchangeRate.dict_key(MoneyCode.HKD, MoneyCode.CNY): hkd_to_cny_rate,
             BocHkExchangeRate.dict_key(MoneyCode.USD, MoneyCode.HKD): Decimal(hkd_usd_rate['sell']),
             BocHkExchangeRate.dict_key(MoneyCode.HKD, MoneyCode.USD): hkd_to_usd_rate
-        }
-
-    def __request_usd_base_rate(self) -> dict[str, Decimal]:
-        http_client = HttpClient()
-        http_response = http_client.get(
-            "https://www.bochk.com/whk/rates/exchangeRatesUSD/exchangeRatesUSD-input.action?lang=en")
-
-        rate_tr_list = self.__parse_response(http_response)
-        usd_cny_rate = self.__search_rate(rate_tr_list, 'USD/CNH')
-
-        # 因为表格中都是以美元为角度, 卖出美元，买入人民币(卖出 1 美元可以买入多少人民币), 和卖出人民币, 买入美元(卖出 多少人民币可以买入 1 美元)
-        # 所以人民币兑美元, 需要将卖出人民币做转换
-        cny_to_usd_rate = Decimal("1") / Decimal(usd_cny_rate['buy'])
-
-        return {
-            BocHkExchangeRate.dict_key(MoneyCode.CNY, MoneyCode.USD): cny_to_usd_rate,
-            BocHkExchangeRate.dict_key(MoneyCode.USD, MoneyCode.CNY): Decimal(usd_cny_rate['sell'])
         }
 
     @staticmethod
