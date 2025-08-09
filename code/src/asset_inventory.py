@@ -84,10 +84,14 @@ class AssetInventory:
             this_month_profit_loss_situation_in_rmb = self.__convert_to_rmb_if_needed(this_month_profit_loss_situation,
                                                                                       asset_config["money_code"])
 
+            current_account_balance_in_rmb = self.__convert_to_rmb_if_needed(
+                Decimal(asset_config["current_account_balance"]), asset_config["money_code"])
+
             this_month_asset_profit_loss_situation_list.append({
                 "name": asset_config["name"],
                 "money_code": asset_config["money_code"],
                 "last_month_account_balance": asset_config["current_account_balance"],
+                "current_account_balance_in_rmb": str(round(current_account_balance_in_rmb, 2)),
                 "this_month_profit_loss_situation_in_rmb": str(round(this_month_profit_loss_situation_in_rmb, 2))
             })
 
@@ -120,14 +124,18 @@ class AssetInventory:
             Decimal: 列表中的资产的盈亏总余额
         """
         this_month_total_profit_loss_situation_in_rmb = Decimal("0.00")
+        this_month_account_balance_in_rmb = Decimal("0.00")
 
         for profit_loss_status in this_month_profit_loss_status_list:
             this_month_profit_loss_situation_in_rmb = Decimal(
                 str(profit_loss_status["this_month_profit_loss_situation_in_rmb"]))
             this_month_total_profit_loss_situation_in_rmb += this_month_profit_loss_situation_in_rmb
+            this_month_account_balance_in_rmb += Decimal(
+                str(profit_loss_status["current_account_balance_in_rmb"]))
 
         this_month_total_profit_loss_situation_in_rmb_str = str(round(this_month_total_profit_loss_situation_in_rmb, 2))
-        logger.info("本月{}总盈亏情况:{}", assert_type.cn_name, this_month_total_profit_loss_situation_in_rmb_str)
+        logger.info("本月{}总盈亏情况:{}, 当前总人民币金额:{}", assert_type.cn_name,
+                    this_month_total_profit_loss_situation_in_rmb_str, str(round(this_month_account_balance_in_rmb, 2)))
         return this_month_total_profit_loss_situation_in_rmb_str
 
     @staticmethod
@@ -158,7 +166,6 @@ class AssetInventory:
 
 
 if __name__ == '__main__':
-
     boc_hk_exchange_rate_handler = BocHkExchangeRateHandler()
     boc_hk_exchange_rate = boc_hk_exchange_rate_handler.fetch_exchange_rate()
 

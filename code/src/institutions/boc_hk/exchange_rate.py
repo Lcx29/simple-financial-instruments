@@ -76,10 +76,12 @@ class BocHkExchangeRateHandler:
 
     def __request_hkd_base_rate(self) -> dict[str, Decimal]:
         # 请求 BOC HK 和 HKD 相关的汇率数据 - 实时
-        hkd_to_cny_real_time_rate = Decimal(self.__request_hkd_base_real_time_rate(MoneyCode.HKD, MoneyCode.CNY))
+        hkd_to_cny_real_time_rate = Decimal("1") / Decimal(
+            self.__request_hkd_base_real_time_rate(MoneyCode.HKD, MoneyCode.CNY))
         cny_to_hkd_real_time_rate = Decimal(self.__request_hkd_base_real_time_rate(MoneyCode.CNY, MoneyCode.HKD))
 
-        hkd_to_usd_real_time_rate = Decimal(self.__request_hkd_base_real_time_rate(MoneyCode.HKD, MoneyCode.USD))
+        hkd_to_usd_real_time_rate = Decimal("1") / Decimal(
+            self.__request_hkd_base_real_time_rate(MoneyCode.HKD, MoneyCode.USD))
         usd_to_hkd_real_time_rate = Decimal(self.__request_hkd_base_real_time_rate(MoneyCode.USD, MoneyCode.HKD))
 
         return {
