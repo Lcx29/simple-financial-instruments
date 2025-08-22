@@ -61,9 +61,3 @@ class ServerChanPush:
             print(f"ServerChan push success: {response.get('message', 'No message')}")
         except Exception as exception:
             raise RuntimeError(f"ServerChan push failed: {str(exception)}") from exception
-
-
-if __name__ == '__main__':
-    push = ServerChanPush(send_key="SCT251954TODBC150trJRSiZOBE9kYzv5J")
-    param = ServerChanPushParam(title="Test Title", content="This is a test content.")
-    push.push(param)
