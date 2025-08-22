@@ -26,10 +26,10 @@ def setup_logging(debug: bool = False):
         debug: 是否启用调试模式，True时日志级别为DEBUG，False时为INFO
     """
     logger.remove()  # 移除默认配置
-    
+
     log_level = "DEBUG" if debug else "INFO"
     log_format = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
-    
+
     logger.add(sys.stdout, level=log_level, format=log_format)
 
 
@@ -47,24 +47,24 @@ def analyze_portfolio(config: ApplicationConfig, output_format: str = 'text'):
         bool: 分析是否成功完成
     """
     logger.info("Starting portfolio analysis...")
-    
+
     use_case = config.get_analyze_portfolio_use_case()
     result = use_case.execute(output_format)
-    
+
     if result['success']:
         logger.info("Portfolio analysis completed successfully")
-        
+
         # 输出结果
         if 'report_text' in result:
             print("\n" + result['report_text'])
-        
+
         if 'portfolio_summary' in result and result['portfolio_summary']:
             summary = result['portfolio_summary']
             print(f"\n投资组合概要:")
             print(f"  总资产数量: {summary['total_assets']}")
             print(f"  资产类型数量: {summary['asset_types']}")
             print(f"  资产类型分布: {summary['asset_type_breakdown']}")
-        
+
         return True
     else:
         logger.error(f"Portfolio analysis failed: {result.get('error', 'Unknown error')}")
@@ -84,13 +84,13 @@ def generate_next_month_template(config: ApplicationConfig):
         bool: 模板生成是否成功完成
     """
     logger.info("Starting next month template generation...")
-    
+
     use_case = config.get_generate_template_use_case()
     result = use_case.execute()
-    
+
     if result['success']:
         logger.info("Next month template generation completed successfully")
-        
+
         # 输出统计信息
         if 'statistics' in result and result['statistics']:
             stats = result['statistics']
@@ -98,7 +98,7 @@ def generate_next_month_template(config: ApplicationConfig):
             print(f"  总资产数量: {stats['total_assets']}")
             print(f"  资产类型数量: {stats['asset_types_count']}")
             print(f"  资产类型分布: {stats['asset_type_breakdown']}")
-        
+
         return True
     else:
         logger.error(f"Template generation failed: {result.get('error', 'Unknown error')}")
@@ -126,51 +126,51 @@ def main():
         1: 发生错误或操作失败
     """
     parser = argparse.ArgumentParser(description="Personal Financial Asset Management Tool")
-    parser.add_argument('command', choices=['analyze', 'template', 'both'], 
-                       help='Command to execute')
-    parser.add_argument('--file', '-f', type=str, 
-                       help='Asset inventory YAML file path')
+    parser.add_argument('command', choices=['analyze', 'template', 'both'],
+                        help='Command to execute')
+    parser.add_argument('--file', '-f', type=str,
+                        help='Asset inventory YAML file path')
     parser.add_argument('--provider', '-p', type=str, default='boc_hk',
-                       choices=['boc_hk'], help='Exchange rate provider')
+                        choices=['boc_hk'], help='Exchange rate provider')
     parser.add_argument('--format', type=str, default='text',
-                       choices=['text', 'dict', 'both'], 
-                       help='Output format for analysis')
-    parser.add_argument('--debug', action='store_true', 
-                       help='Enable debug logging')
-    
+                        choices=['text', 'dict', 'both'],
+                        help='Output format for analysis')
+    parser.add_argument('--debug', action='store_true',
+                        help='Enable debug logging')
+
     args = parser.parse_args()
-    
+
     # 设置日志
     setup_logging(args.debug)
-    
+
     try:
         # 创建应用配置
         config = ApplicationConfig(
             asset_file_path=args.file,
             exchange_rate_provider=args.provider
         )
-        
+
         # 验证配置
         if not config.validate_configuration():
             logger.error("Configuration validation failed")
             sys.exit(1)
-        
+
         success = True
-        
+
         # 执行命令
         if args.command in ['analyze', 'both']:
             success &= analyze_portfolio(config, args.format)
-        
+
         if args.command in ['template', 'both']:
             success &= generate_next_month_template(config)
-        
+
         if success:
             logger.info("All operations completed successfully")
             sys.exit(0)
         else:
             logger.error("Some operations failed")
             sys.exit(1)
-            
+
     except KeyboardInterrupt:
         logger.info("Operation cancelled by user")
         sys.exit(1)

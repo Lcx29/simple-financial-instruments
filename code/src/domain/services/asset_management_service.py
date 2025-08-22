@@ -93,10 +93,9 @@ class AssetManagementService:
         """生成下月资产配置模板。
         
         根据当前投资组合生成下月的资产配置模板：
-        1. 加载当前投资组合
-        2. 为每个资产生成下月配置（信用卡除外）
-        3. 将配置转换为字典格式
-        4. 保存模板到存储中
+        1. 调用仓库的save_next_month_portfolio方法生成模板文件
+        2. 加载生成的模板以获取统计信息
+        3. 返回统计信息供上层使用
         
         Returns:
             下月资产配置的字典数据，按资产类型组织
@@ -104,31 +103,37 @@ class AssetManagementService:
         Raises:
             RepositoryError: 当数据操作失败时
         """
-        portfolio = self._repository.load_portfolio()
-        next_month_portfolio = portfolio.prepare_next_month_portfolio()
-        
-        # 转换为字典格式
-        next_month_data = {}
-        grouped_assets = next_month_portfolio.group_by_asset_type()
-        
-        for asset_type, assets in grouped_assets.items():
-            asset_list = []
-            for asset in assets:
-                asset_data = {
-                    'name': asset.name,
-                    'money_code': asset.currency.value,
-                    'current_account_balance': float(asset.current_balance),
-                    'last_month_account_balance': float(asset.previous_balance)
-                }
-                asset_list.append(asset_data)
+        try:
+            # 使用仓库的模板处理器生成下月模板（保持原始格式）
+            self._repository.save_next_month_portfolio({})  # 传递空字典，实际不使用
             
-            next_month_data[asset_type.en_name] = asset_list
-        
-        # 保存下月模板
-        self._repository.save_next_month_portfolio(next_month_data)
-        
-        logger.info(f"Generated next month template with {len(next_month_data)} asset types")
-        return next_month_data
+            # 为了返回统计信息，我们需要生成一个简化的数据结构
+            portfolio = self._repository.load_portfolio()
+            next_month_portfolio = portfolio.prepare_next_month_portfolio()
+            
+            # 转换为字典格式以供统计
+            next_month_data = {}
+            grouped_assets = next_month_portfolio.group_by_asset_type()
+            
+            for asset_type, assets in grouped_assets.items():
+                asset_list = []
+                for asset in assets:
+                    asset_data = {
+                        'name': asset.name,
+                        'money_code': asset.currency.value,
+                        'current_account_balance': float(asset.current_balance),
+                        'last_month_account_balance': float(asset.previous_balance)
+                    }
+                    asset_list.append(asset_data)
+                
+                next_month_data[asset_type.en_name] = asset_list
+            
+            logger.info(f"Generated next month template with {len(next_month_data)} asset types")
+            return next_month_data
+            
+        except Exception as e:
+            logger.error(f"Failed to generate next month template: {e}")
+            raise
     
     def _analyze_asset_type_profit_loss(self, asset_type: AssetType, 
                                        assets: List[Asset]) -> AssetTypeSummary:

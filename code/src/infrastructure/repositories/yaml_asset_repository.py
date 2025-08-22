@@ -21,6 +21,7 @@ from domain.enums.asset_type import AssetType
 from domain.enums.money_code import MoneyCode
 from domain.services.asset_repository import AssetRepository, RepositoryError
 from utils.file_parse import parse_yaml_file, write_yaml_file
+from utils.yaml_template_processor import YamlTemplateProcessor
 
 
 class YamlAssetRepository(AssetRepository):
@@ -43,6 +44,7 @@ class YamlAssetRepository(AssetRepository):
             RepositoryError: 当文件路径无效时抛出异常
         """
         self._file_path = file_path
+        self._template_processor = YamlTemplateProcessor()
         self._validate_file_path()
     
     def _validate_file_path(self) -> None:
@@ -109,22 +111,21 @@ class YamlAssetRepository(AssetRepository):
     def save_next_month_portfolio(self, portfolio_data: Dict[str, List[Dict[str, Any]]]) -> None:
         """保存下月投资组合模板数据。
         
-        将下月投资组合数据保存到自动生成的文件名中。
+        使用模板处理器生成保持原始格式的下月模板文件。
         
         Args:
-            portfolio_data: 下月投资组合的字典数据
+            portfolio_data: 下月投资组合的字典数据（此参数在新实现中不使用）
             
         Raises:
             RepositoryError: 当文件保存失败时抛出异常
         """
         try:
-            # 生成下月文件路径
-            next_month_file_path = self._generate_next_month_file_path()
-            write_yaml_file(next_month_file_path, portfolio_data)
-            logger.info(f"Saved next month portfolio data to {next_month_file_path}")
+            # 使用模板处理器生成下月模板，保持原始格式
+            template_file_path = self._template_processor.generate_next_month_template(self._file_path)
+            logger.info(f"Saved next month portfolio template to {template_file_path}")
             
         except Exception as e:
-            raise RepositoryError(f"Failed to save next month portfolio data", e)
+            raise RepositoryError(f"Failed to save next month portfolio template", e)
     
     def _convert_data_to_assets(self, data: Dict[str, Any]) -> List[Asset]:
         """将YAML数据转换为资产对象列表。
