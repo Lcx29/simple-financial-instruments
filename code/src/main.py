@@ -11,7 +11,6 @@
 
 import sys
 import argparse
-from pathlib import Path
 
 from loguru import logger
 

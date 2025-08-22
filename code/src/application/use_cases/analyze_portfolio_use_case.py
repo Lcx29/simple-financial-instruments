@@ -98,8 +98,7 @@ class AnalyzePortfolioUseCase:
                 'portfolio_summary': None
             }
 
-    @staticmethod
-    def log_analysis_summary(report: ProfitLossReport) -> None:
+    def __log_analysis_summary(self, report: ProfitLossReport) -> None:
         """记录投资组合分析的摘要信息。
         
         将分析结果的关键信息记录到日志中，便于跟踪和调试。
