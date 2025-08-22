@@ -34,8 +34,8 @@ class AssetManagementService:
         _repository: 资产数据仓库，用于数据的加载和保存
         _exchange_service: 汇率服务，用于货币转换计算
     """
-    
-    def __init__(self, repository: AssetRepository, 
+
+    def __init__(self, repository: AssetRepository,
                  exchange_service: ExchangeRateService):
         """初始化资产管理服务。
         
@@ -45,7 +45,7 @@ class AssetManagementService:
         """
         self._repository = repository
         self._exchange_service = exchange_service
-    
+
     def analyze_profit_loss(self) -> ProfitLossReport:
         """分析投资组合的盈亏情况。
         
@@ -64,31 +64,31 @@ class AssetManagementService:
         """
         portfolio = self._repository.load_portfolio()
         logger.info(f"Analyzing profit/loss for portfolio with {portfolio.size()} assets")
-        
+
         asset_type_summaries = []
         total_profit_loss_rmb = Decimal("0.00")
-        
+
         # 按资产类型分组处理
         grouped_assets = portfolio.group_by_asset_type()
-        
+
         for asset_type, assets in grouped_assets.items():
             logger.info(f"Processing asset type: {asset_type.cn_name}")
-            
+
             summary = self._analyze_asset_type_profit_loss(asset_type, assets)
             asset_type_summaries.append(summary)
             total_profit_loss_rmb += summary.total_profit_loss_rmb
-            
+
             logger.info(f"{asset_type.cn_name} total profit/loss: ¥{summary.total_profit_loss_rmb}")
-        
+
         report = ProfitLossReport(
             generated_at=datetime.now(),
             asset_type_summaries=asset_type_summaries,
             total_profit_loss_rmb=total_profit_loss_rmb
         )
-        
+
         logger.info(f"Portfolio total profit/loss: ¥{total_profit_loss_rmb}")
         return report
-    
+
     def generate_next_month_template(self) -> Dict[str, List[Dict[str, Any]]]:
         """生成下月资产配置模板。
         
@@ -106,15 +106,15 @@ class AssetManagementService:
         try:
             # 使用仓库的模板处理器生成下月模板（保持原始格式）
             self._repository.save_next_month_portfolio({})  # 传递空字典，实际不使用
-            
+
             # 为了返回统计信息，我们需要生成一个简化的数据结构
             portfolio = self._repository.load_portfolio()
             next_month_portfolio = portfolio.prepare_next_month_portfolio()
-            
+
             # 转换为字典格式以供统计
             next_month_data = {}
             grouped_assets = next_month_portfolio.group_by_asset_type()
-            
+
             for asset_type, assets in grouped_assets.items():
                 asset_list = []
                 for asset in assets:
@@ -125,18 +125,18 @@ class AssetManagementService:
                         'last_month_account_balance': float(asset.previous_balance)
                     }
                     asset_list.append(asset_data)
-                
+
                 next_month_data[asset_type.en_name] = asset_list
-            
+
             logger.info(f"Generated next month template with {len(next_month_data)} asset types")
             return next_month_data
-            
+
         except Exception as e:
             logger.error(f"Failed to generate next month template: {e}")
             raise
-    
-    def _analyze_asset_type_profit_loss(self, asset_type: AssetType, 
-                                       assets: List[Asset]) -> AssetTypeSummary:
+
+    def _analyze_asset_type_profit_loss(self, asset_type: AssetType,
+                                        assets: List[Asset]) -> AssetTypeSummary:
         """分析特定资产类型的盈亏情况。
         
         对指定资产类型下的所有资产进行盈亏分析，包括货币转换。
@@ -155,35 +155,36 @@ class AssetManagementService:
                 total_profit_loss_rmb=Decimal("0.00"),
                 profit_loss_details=[]
             )
-        
+
         profit_loss_details = []
         total_profit_loss_rmb = Decimal("0.00")
-        
+
         for asset in assets:
             # 计算盈亏
             profit_loss_amount = asset.calculate_profit_loss()
-            
+
             # 转换为人民币
             profit_loss_rmb = self._convert_to_rmb_if_needed(
                 profit_loss_amount, asset.currency
             )
-            
+
             detail = ProfitLossInfo(
                 name=asset.name,
                 money_code=asset.currency,
                 last_month_balance=asset.previous_balance,
+                current_month_balance=asset.current_balance,
                 profit_loss_amount_rmb=profit_loss_rmb
             )
-            
+
             profit_loss_details.append(detail)
             total_profit_loss_rmb += profit_loss_rmb
-        
+
         return AssetTypeSummary(
             asset_type=asset_type,
             total_profit_loss_rmb=total_profit_loss_rmb,
             profit_loss_details=profit_loss_details
         )
-    
+
     def _convert_to_rmb_if_needed(self, amount: Decimal, currency: MoneyCode) -> Decimal:
         """如果需要，将金额转换为人民币。
         
@@ -198,14 +199,14 @@ class AssetManagementService:
         """
         if currency == MoneyCode.CNY:
             return amount
-        
+
         try:
             return self._exchange_service.convert(currency, MoneyCode.CNY, amount)
         except Exception as e:
             logger.warning(f"Failed to convert {currency.value} to CNY: {e}")
             # 如果转换失败，返回原金额（可能需要根据业务需求调整）
             return amount
-    
+
     def get_portfolio_summary(self) -> Dict[str, Any]:
         """获取投资组合的概要统计信息。
         
@@ -218,16 +219,16 @@ class AssetManagementService:
             RepositoryError: 当数据加载失败时
         """
         portfolio = self._repository.load_portfolio()
-        
+
         summary = {
             'total_assets': portfolio.size(),
             'asset_types': len(portfolio.get_asset_types()),
             'asset_type_breakdown': {}
         }
-        
+
         # 按资产类型统计
         grouped_assets = portfolio.group_by_asset_type()
         for asset_type, assets in grouped_assets.items():
             summary['asset_type_breakdown'][asset_type.cn_name] = len(assets)
-        
+
         return summary

@@ -16,6 +16,9 @@ from loguru import logger
 
 from infrastructure.config.application_config import ApplicationConfig
 
+# 定义支持的汇率提供商列表
+SUPPORTED_EXCHANGE_RATE_PROVIDERS = ["boc_hk"]
+
 
 def setup_logging(debug: bool = False):
     """配置应用程序的日志记录系统。
@@ -41,7 +44,7 @@ def analyze_portfolio(config: ApplicationConfig, output_format: str = 'text'):
     
     Args:
         config: 应用配置对象，包含所有必要的服务配置
-        output_format: 输出格式，可选值为'text'、'dict'或'both'
+        output_format: 输出格式，可选值为 'text'、'dict' 或 'both'
         
     Returns:
         bool: 分析是否成功完成
@@ -126,17 +129,18 @@ def main():
         1: 发生错误或操作失败
     """
     parser = argparse.ArgumentParser(description="Personal Financial Asset Management Tool")
-    parser.add_argument('command', choices=['analyze', 'template', 'both'],
-                        help='Command to execute')
-    parser.add_argument('--file', '-f', type=str,
-                        help='Asset inventory YAML file path')
+
+    parser.add_argument('command', choices=['analyze', 'template', 'both'], help='Command to execute')
+
+    parser.add_argument('--file', '-f', type=str, help='Asset inventory YAML file path')
+
     parser.add_argument('--provider', '-p', type=str, default='boc_hk',
-                        choices=['boc_hk'], help='Exchange rate provider')
-    parser.add_argument('--format', type=str, default='text',
-                        choices=['text', 'dict', 'both'],
+                        choices=SUPPORTED_EXCHANGE_RATE_PROVIDERS, help='Exchange rate provider')
+
+    parser.add_argument('--format', type=str, default='text', choices=['text', 'dict', 'both'],
                         help='Output format for analysis')
-    parser.add_argument('--debug', action='store_true',
-                        help='Enable debug logging')
+
+    parser.add_argument('--debug', action='store_true', help='Enable debug logging')
 
     args = parser.parse_args()
 
@@ -147,7 +151,8 @@ def main():
         # 创建应用配置
         config = ApplicationConfig(
             asset_file_path=args.file,
-            exchange_rate_provider=args.provider
+            exchange_rate_provider=args.provider,
+            supported_providers=SUPPORTED_EXCHANGE_RATE_PROVIDERS
         )
 
         # 验证配置
